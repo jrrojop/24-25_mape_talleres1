@@ -1,0 +1,268 @@
+---
+title: "Talleres 1 - Sesión 2"
+author: "Estudiante"
+author-title: Autores
+published-title: Última modificación
+date: "`r Sys.Date()`"
+format: 
+  html:
+    embed-resources: true
+    code-fold: false
+    code-summary: "Mostrar código."
+    toc: true
+    toc-depth: 2
+    toc-title: Tabla de contenidos
+lang: es
+editor_options: 
+  chunk_output_type: console
+editor: source
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+library(pacman)
+# Añade aquí las librerías necesarias para realizar la actividad
+p_load(tidyverse,readxl)
+
+```
+
+## Ejercicios Sesión 2
+
+Primero de todo. Cargamos los datos de las elecciones al Congreso 2023
+
+```{r datos}
+
+# Hay que hacer algunos ajustes
+elec23 <- 
+  # Cargar los datos
+  read_xlsx("202307_elec_congr_municipios.xlsx",
+            # Especificando el rango de celdas
+            range = "A6:BT8137") |> 
+  # Cambiar el nombre de las variables
+  rename(
+    CA = `Nombre de Comunidad`,
+    IdProv = `Código de Provincia`,
+    Prov = `Nombre de Provincia`,
+    IdMuni = `Código de Municipio`,
+    Muni = `Nombre de Municipio`,
+    Pob = Población,
+    Mesas = `Número de mesas`,
+    Censo = `Total censo electoral`,
+    Votantes = `Total votantes`,
+    VotVal = `Votos válidos`,
+    VotCand = `Votos a candidaturas`,
+    VotBl = `Votos en blanco`,
+    VotNul = `Votos nulos`,
+    JxCAT = `JxCAT - JUNTS`,
+    BILDU = `EH Bildu`,
+    PNV = `EAJ-PNV`,
+    BNG = B.N.G.,
+    UPN = U.P.N.
+  )
+
+```
+
+### Filter
+
+a. Selecciona los datos de tu municipio
+```{r filtermuni}
+
+elec23_mimuni <- elec23 %>% 
+  filter(Muni=="Tarragona")
+
+```
+
+b. Selecciona los datos del primer municipio de cada provincia
+```{r}
+elec23_muni1 <- elec23 %>% 
+  filter(IdMuni==1)
+  
+```
+c. Selecciona los datos de dos provincias
+```{r}
+elec23_2prov <- elec23 %>% 
+  filter(IdProv %in% c(15,36))
+  # # Alternativamente
+  # filter(IdProv==15|IdProv==36)
+
+```
+d. Selecciona los municipios donde PP saque mejores resultados que PSOE
+```{r}
+elec23_ppmaspsoe <- elec23 %>% 
+  filter(PP>PSOE)
+```
+e. Selecciona los municipios donde PSOE saque mejores resultados que PP
+```{r}
+elec23_psoemaspp <- elec23 %>% 
+  filter(PSOE>PP)
+```
+
+### Select
+
+a. Queremos trabajar únicamente con datos de participación, selecciona las variables mínimas
+```{r}
+elec23_part <- elec23 %>% 
+  select(IdProv,Prov,IdMuni,Muni,Censo,Votantes)
+
+```
+
+b. Elimina la variable de votos al partido animalista
+```{r}
+elec23_sinpacma <- elec23 %>% 
+  select(-PACMA)
+```
+
+c. Selecciona los datos de los Partidos de ámbito estatal
+```{r}
+elec23_pae <- elec23 %>% 
+  select(IdProv,Prov,IdMuni,Muni,PP,PSOE,SUMAR,VOX)
+```
+
+### Mutate
+
+a. Crea la variable de participación
+```{r}
+elec23_part <- elec23_part %>% 
+  mutate(part = Votantes/Censo*100)
+```
+
+b. Crea una variable que indique la relación de votos entre PP y PSOE
+```{r}
+elec23 <- elec23 %>% 
+  mutate(relacionpppsoe = (PP/PSOE))
+```
+
+c. Crea la variable de porcentaje de voto a un partido, elige el que te guste más (o al que nunca votarías)
+```{r}
+elec23 <- elec23 %>% 
+  mutate(VOX_por = VOX/Votantes*100)
+```
+
+d. Categoriza los municipios en base a su población en dos o tres categorías. [Pista: usa if_else()]
+```{r}
+elec23 <- elec23 %>% 
+  mutate(municat = if_else(Pob>=90000,"Ciudad","Pueblo") %>% as.factor(),
+         municat3 = if_else(Pob<5000,"Pueblecito", if_else(Pob<20000,"Pueblo","Ciudad")) %>% as.factor()
+         )
+
+```
+
+e. Calcula el % de apoyo a los principales partidos, ajustado a cada CA.
+```{r}
+elec23 <- elec23 %>% 
+  mutate(apoyo = case_when(CA == "Galicia" ~ PP + BNG + PSOE + SUMAR + VOX,
+                           CA == "Cataluña" ~ PP + PSOE + SUMAR + VOX + ERC + JxCAT,
+                           CA == "País Vasco" ~ PP + PSOE + SUMAR + VOX + PNV + BILDU,
+                           TRUE ~ PP + PSOE + SUMAR + VOX))
+
+```
+
+
+#### Group_by & Summarise
+
+a. Calcula qué porcentaje de apoyo recibe el PSOE en cada municipio respecto al total de votos al PSOE en la provincia
+```{r}
+
+elec23 <- elec23 %>% 
+  group_by(Prov) %>% 
+  mutate(PSOE_prov = sum(PSOE),
+         PSOE_por_prov = PSOE/PSOE_prov*100) %>% 
+  ungroup() 
+
+elec23 %>% 
+  select(Muni,PSOE,PSOE_prov,PSOE_por_prov)
+
+```
+
+
+b. Agrupa los resultados electorales por provincias: Los resultados deberían ser parecidos a los resultados oficiales [(enlace aquí)](https://www.boe.es/diario_boe/txt.php?id=BOE-A-2023-18907)
+```{r}
+
+elec23_prov <- elec23 %>% 
+  group_by(Prov, IdProv) %>%
+  summarise(PSOE = sum(PSOE, na.rm = T),
+            PP = sum(PP, na.rm = T),
+            VOX = sum(VOX, na.rm = T),
+            SUMAR = sum(SUMAR, na.rm = T))
+
+```
+
+c. Agrupa los resultados por tipología de municipio. Obtén el total de censo y votantes. Calcula la participación y los % de apoyo a los partidos
+```{r}
+elec23_tipologia <- elec23 %>% 
+  group_by(municat) %>% # agrupamos por tipo de municipio!
+  summarise(Censo = sum(Censo, na.rm = T),
+            Votantes = sum(Votantes, na.rm = T),
+            PSOE = sum(PSOE, na.rm = T),
+            PP = sum(PP, na.rm = T),
+            VOX = sum(VOX, na.rm = T),
+            SUMAR = sum(SUMAR, na.rm = T)) %>% 
+  mutate(Participacion = Votantes/Censo*100,
+         SUMAR_por = SUMAR/Votantes*100)
+
+```
+
+
+#### Stringr
+
+a. Resultados electorales del municipio con el nombre más corto
+
+```{r}
+elec23 <- elec23 %>% 
+  mutate(caracteres_muni = str_length(Muni))
+
+elec23 %>% 
+  arrange(caracteres_muni) %>% 
+  select(Prov,Muni,Censo,Votantes,PP)
+
+```
+
+
+b. Municipios con nombre de santo
+
+```{r}
+elec23_san <- elec23 %>% 
+  filter(str_detect(Muni,"San |Santo |Santa "))
+```
+
+c. Municipios que empiecen por nombre de santo
+
+```{r}
+elec23_san_inicio <- elec23 %>% 
+  filter(str_detect(Muni,"^San |^Sant |^Santo |^Santa "))
+```
+
+###### Datos de alcaldes
+```{r}
+alcaldes <- read_xlsx("alcaldes_2023.xlsx")
+```
+a. Separa nombre de apellidos
+```{r}
+alcaldes <- alcaldes %>% 
+  separate(NombreCompleto,
+           ", ",
+           into = c("Apellidos","Nombre"))
+```
+b. Homogeneiza formato
+```{r}
+alcaldes <- alcaldes %>% 
+  mutate(Nombre = str_to_title(Nombre),
+         Apellidos = str_to_title(Apellidos))
+```
+c. Alcaldes que se llamen Antonio
+```{r}
+alcalde_antonio <- alcaldes %>% 
+  filter(str_detect(Nombre,"^Antonio$"))
+```
+d. Sánchez: PP vs. PSOE
+```{r}
+alcalde_sanchez <- alcaldes %>% 
+  mutate(espacios = str_count(Apellidos," ")) %>% 
+  filter(str_detect(Apellidos,"^Sánchez|^Sanchez| Sánchez$| Sanchez$"))
+  
+alcalde_sanchez %>% 
+  filter(Partido %in% c("PP","PSOE")) %>% 
+  group_by(Partido) %>% 
+  summarise(count = n())
+  
+```

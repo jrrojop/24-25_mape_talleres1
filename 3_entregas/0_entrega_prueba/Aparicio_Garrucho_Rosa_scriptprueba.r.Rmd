@@ -1,0 +1,143 @@
+---
+title: "primerdia talleres"
+output: html_document
+date: "2024-11-05"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+#install.packages("pacman") ##para descargar casi todos los paquetes 
+```
+
+```{r}
+
+library(pacman)
+```
+
+```{r}
+#install.packages("devtools")  ##para instalar desde gitbug
+```
+
+```{r}
+p_load("r4np") ##para cargar todas las librerias y si no esta lo va a descargar, este paquete sirve para que el proyecto tenga estructura
+```
+
+```{r}
+#install.packages("devtools")
+```
+
+```{r}
+library(devtools)
+```
+
+```{r}
+devtools::install_github("ddauber/r4np")
+```
+
+```{r}
+create_project_folder() --> para crear carpetas automaticamente
+```
+
+```{r}
+pepito <- 3
+```
+
+
+## Crear una función
+
+
+### Una función que retorne el valor de la mitad de un número
+
+```{r}
+funcionmitad <- function(x) {
+  y <- x/2
+  return(y)
+}
+```
+
+
+
+```{r}
+funcionmitad(pepito)
+```
+
+```{r}
+f_multiplicacion <- function(x) {
+  y <- x*3
+  return(y)
+}   
+```
+
+```{r}
+f_multiplicacion (pepito)
+```
+Con dos argumentos:
+```{r}
+funcionpotencia <- function(x,y) {
+  potencia <- x^y
+  return(potencia)
+}
+```
+
+```{r}
+funcionpotencia(pepito, 4)
+```
+Que me de el resultado como texto: "El resultado de la potencia es:"
+
+```{r}
+funciontexto <- function(x,y) {
+  potencia <- x^y
+  z <- "El resultado de la potencia es: "
+  texto <- paste0(z, potencia)
+  return(texto)
+}
+```
+
+```{r}
+funciontexto(pepito, 4)
+```
+
+```{r}
+library(tidyverse)
+```
+
+
+##Uso del pipe %>%
+
+###Media de los valores 1,5,8 redondeadods a dos decimales
+
+```{r}
+numeros <- c(1,5,8)
+media <- mean(numeros) %>% round(digits = 2)
+
+```
+
+```{r}
+mean(c(1,5,8)) %>% round(2)
+```
+
+```{r}
+c(1,5,8) %>% mean() %>% round(2)
+```
+
+## Github
+Es una platafroma para compartir códigos y proyectos. Es para albergar, compartir, descargar y trabajar con proyectos que siguen los protocolos git. Están creados para el trabajo colaborativo del software libre. 
+
+Repositorio -> conjunto de archivos (puedes enviar nuevos archivos o modificaciones d elos misos o descargartelos)
+
+Branch -> rama del trabajo en la que los usuarios está trabjando y que puede enviar al máster
+
+Commit -> cambio propuesto para ser añadidio a la rama master
+
+Fork -> desviacion de la rama principal
+
+Pull -> enviar tu repositorio al servidor
+
+Push -> descargar un repositorio del servicio
+
+
+
